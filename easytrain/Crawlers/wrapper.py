@@ -1,5 +1,6 @@
 from . import google_crawler, multi_search_crawler
 from easytrainapp.models import DataCollectionUrls
+from datetime import datetime
 
 def get_urls(query):
     
@@ -16,6 +17,6 @@ def get_urls(query):
         for url in urls:
             str_urls += url + " "
 
-        datacollection = DataCollectionUrls(word=query, urls=str_urls, updated_time=DataCollectionUrls.get_local_time())
+        datacollection = DataCollectionUrls(word=query, urls=str_urls, updated_time= datetime.now())
         datacollection.save()
         return urls
