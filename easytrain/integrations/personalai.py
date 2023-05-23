@@ -54,9 +54,12 @@ class Personalai:
 
     def upload(self, urls):
         for url in urls:
+            print("url: ", url)
+            if url.strip() == "":
+                continue
             self.url_data.append(
                 {
-                    "Url": url, 
+                    "Url": url.strip(), 
                     "StartTime": self.get_local_time(),
                     "SourceApp": "EasyTrain"
                     }
@@ -66,6 +69,7 @@ class Personalai:
         print("url_data: ", self.url_data[0])
         for data in self.url_data:
             response = requests.post(self.upload_url, headers=self.headers(), data=json.dumps(data))
+            print("response: ", response.json())
             response_ids.append(response.json()["status_message"]["id"])
         
         return response_ids

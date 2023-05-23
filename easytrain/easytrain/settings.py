@@ -84,11 +84,11 @@ WSGI_APPLICATION = 'easytrain.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'EasyTrain',
+        'NAME': 'EasyTrainDB',
         'USER': 'postgres',
-        'PASSWORD': 'jamil',
+        'PASSWORD': 'admin',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5433',
     }
 }
 

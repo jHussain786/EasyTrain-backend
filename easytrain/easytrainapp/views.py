@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
-
+from .models import DataCollectionUrls
 from integrations.personalai import Personalai
 from Crawlers import wrapper
 import environ
@@ -37,8 +37,12 @@ def login_user(request):
     return render(request, 'login_user.html')
 
 def logout_view(request):
-    logout(request)
-    return redirect('login_user')
+    if request.user.is_authenticated:
+        logout(request)
+        return redirect('login_user', {"message": "You are logged out"})
+    else:
+        return redirect('login_user', {"message": "You are not logged in"})
+    
 
 def home(request):
     if request.user.is_authenticated:
@@ -49,6 +53,7 @@ def home(request):
             
             if per_ai.validate_key():
                 response = per_ai.upload(response)
+                pass
             else:
                 return render(request, 'home.html', {"response": "invalid key"})
             return render(request, 'home.html', {"response": response})
