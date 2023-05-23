@@ -7,3 +7,11 @@ class DataCollectionUrls(models.Model):
 
     def __str__(self):
         return self.word
+    
+class PersonalaiKeys(models.Model):
+    key = models.CharField(max_length=255)
+    user = models.IntegerField()
+    updated_time = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.key

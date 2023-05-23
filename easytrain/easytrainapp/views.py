@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
-from .models import DataCollectionUrls
+from .models import PersonalaiKeys
 from integrations.personalai import Personalai
 from Crawlers import wrapper
 import environ
@@ -42,22 +42,37 @@ def logout_view(request):
         return redirect('login_user', {"message": "You are logged out"})
     else:
         return redirect('login_user', {"message": "You are not logged in"})
-    
+            
+
+
 
 def home(request):
     if request.user.is_authenticated:
+        current_user = request.user
+
+        key_available = PersonalaiKeys.objects.filter(user=current_user.id).exists()
+
         if request.method == 'POST':
             keyword = request.POST['keyword']
-            response = wrapper.get_urls(keyword)
-            per_ai = Personalai(env("PERSONALAI_KEY"))
+            ai_key = request.POST['key']
             
-            if per_ai.validate_key():
-                response = per_ai.upload(response)
-                pass
+            if key_available == False:
+                if Personalai(key=ai_key).validate_key():
+                    ai_key_obj = PersonalaiKeys(key=ai_key, user=current_user.id)
+                    ai_key_obj.save()
+                    key_available = True
+                else:
+                    return render(request, 'home.html', {"error_message": "Invalid key"})
             else:
-                return render(request, 'home.html', {"response": "invalid key"})
-            return render(request, 'home.html', {"response": response})
+                ai_key = PersonalaiKeys.objects.get(user=current_user.id).key
+
+            response = wrapper.get_urls(keyword)
+            per_ai = Personalai(ai_key)
+            response = per_ai.upload(response)
+               
+            return render(request, 'home.html', {"response": response, "key_available": key_available})
+
+        return render(request, 'home.html', {"key_available": key_available})
     else:
         return redirect('login')
-    return render(request, 'home.html')
 
