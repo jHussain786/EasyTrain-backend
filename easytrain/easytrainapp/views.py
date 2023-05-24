@@ -14,16 +14,6 @@ environ.Env.read_env()
 
 
 def register_user(request):
-    # form = UserCreationForm()
-    # if request.method == 'POST':
-    #     form = UserCreationForm(request.POST)
-    #     if form.is_valid():
-    #         print("Form is valid")
-    #         form.save()
-    #         messages.success(request, 'Account created successfully') 
-    #         return redirect('login')
-    # return render(request, 'register_user.html', {'form': form})
-
     form = UserCreationForm()
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
@@ -31,7 +21,7 @@ def register_user(request):
             form.save()
             return JsonResponse({"message": "Account created successfully"})
         else:
-            return JsonResponse({"error_message": "Invalid form data"})
+            return JsonResponse({"error_message": "Invalid form data", "message": form.errors})
     return JsonResponse({"form": form})
 
 def login_user(request):  
