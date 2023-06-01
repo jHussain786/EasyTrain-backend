@@ -19,9 +19,12 @@ def register_user(request):
         form = UserCreationForm(request.POST)
         if form.is_valid():
             form.save()
+            return render(request, 'login_user.html')
             return JsonResponse({"message": "Account created successfully"})
         else:
+            return render(request, 'register.html')
             return JsonResponse({"error_message": "Invalid form data", "message": form.errors})
+    return render(request, 'register.html')
     return JsonResponse({"form": form})
 
 def login_user(request):  
@@ -30,16 +33,21 @@ def login_user(request):
         print(authenticated_user)
         if authenticated_user is not None:
             login(request, authenticated_user)
-            return JsonResponse({"message": "Logged in successfully"})
+            return render(request, 'home.html')
+            # return JsonResponse({"message": "Logged in successfully"})
         else:
+            return render(request, 'login_user.html')
             return JsonResponse({"error_message": "Invalid username or password"})
+    return render(request, 'login_user.html')
     return JsonResponse({})
 
 def logout_view(request):
     if request.user.is_authenticated:
         logout(request)
-        return JsonResponse({"message": "You are logged out"})
+        return render(request, 'login.html')
+        # return JsonResponse({"message": "You are logged out"})
     else:
+        return render(request, 'login.html')
         return JsonResponse({"message": "You are logged out"})
             
 
@@ -69,9 +77,13 @@ def home(request):
             per_ai = Personalai(ai_key)
             response = per_ai.upload(response)
 
-            return JsonResponse({"IDs on PersonalAI": response, "key_available": key_available})
+
+            return render(request, 'home.html', {"IDs on PersonalAI": response, "key_available": key_available})
+            # return JsonResponse({"IDs on PersonalAI": response, "key_available": key_available})
         
-        return JsonResponse({"key_available": key_available})
+        return render(request, 'home.html', {"key_available": key_available})
+        # return JsonResponse({"key_available": key_available})
     else:
-        return JsonResponse({"error_message": "You are not logged in"})
+        return render(request, 'login.html')
+        # return JsonResponse({"error_message": "You are not logged in"})
 
