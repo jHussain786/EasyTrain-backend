@@ -83,6 +83,9 @@
 							</div>
 							<input type="text" name="username">
 						</div>
+
+						
+
 						<div class="input-group mb-2">
 							<div class="input-group-append">
 								<span class="input-group-text"><i class="fas fa-envelope-square"></i></span>
@@ -95,6 +98,7 @@
 							</div>
 							<input type="text" name="password1">
 						</div>
+
 						<div class="input-group mb-2">
 							<div class="input-group-append">
 								<span class="input-group-text"><i class="fas fa-key"></i></span>
@@ -102,12 +106,22 @@
 							<input type="text" name="password2">
 						</div>
 
+						<div class="input-group mb-3">
+							<div class="input-group-append">
+								<span class="input-group-text"><i class="fas fa-user"></i></span>
+							</div>
+							<input placeholder="personal ai key" type="text" name="personal">
+						</div>
+
 				   		<div class="d-flex justify-content-center mt-3 login_container">
 				 			<input class="btn login_btn" type="submit" value="Register Account">
 				   		</div>
 					</form>
 				</div>
-        {{form.errors}}
+				{% if form.errors %}
+				{{form.errors}}
+				{% endif %}
+
 
         <div class="mt-4">
 					<div class="d-flex justify-content-center links">

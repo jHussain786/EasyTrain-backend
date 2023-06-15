@@ -33,10 +33,7 @@ SECRET_KEY = 'django-insecure-5ssd7m$v%jy+=*aeu-=ood=kq*nk%m@7ev#ifl728*1a98xia7
 DEBUG = True
 
 ALLOWED_HOSTS = [
-  'localhost',
-  '127.0.0.1',
-  '111.222.333.444',
-  'mywebsite.example']
+  'localhost','env-staging-easytrain.eba-pdphuq2w.us-west-2.elasticbeanstalk.com']
 
 
 # Application definition
@@ -87,12 +84,12 @@ WSGI_APPLICATION = 'easytrain.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'EasyTrainDB',
-        'USER': 'postgres',
-        'PASSWORD': 'admin',
-        'HOST': 'localhost',
-        'PORT': '5433',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'ebdb',
+        'USER': 'ebroot',
+        'PASSWORD': 'ebrootebroot',
+        'HOST': 'awseb-e-2ac2jcwy9e-stack-awsebrdsdatabase-eurthb8fzq9d.carr303mirjv.us-west-2.rds.amazonaws.com',
+        'PORT': '5432',
     }
 }
 
