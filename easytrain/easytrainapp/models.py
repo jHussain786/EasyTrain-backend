@@ -28,17 +28,11 @@ class Profiles(models.Model):
 
 class Packages(models.Model):
     name = models.CharField(max_length=255)
-    description = models.CharField(max_length=255)
+    DataCollection = models.CharField(max_length=255)
     price = models.IntegerField()
+    is_active = models.BooleanField(default=False)
     updated_time = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return self.name
     
-class ProfilePackages(models.Model):
-    user = models.IntegerField()
-    package = models.IntegerField()
-    updated_time = models.DateTimeField(auto_now=True)
-    
-    def __str__(self):
-        return self.user
