@@ -6,11 +6,12 @@ from django.contrib.auth.decorators import login_required
 from .models import PersonalaiKeys, Profiles
 from django.http import JsonResponse
 from integrations.personalai import Personalai
-from Crawlers import wrapper
+from Crawlers.wrapper import wrapper
 import environ
 import os
 env = environ.Env()
 environ.Env.read_env()
+
 
 def register_user(request):
     form = UserCreationForm()
@@ -18,16 +19,25 @@ def register_user(request):
         form = UserCreationForm(request.POST)
 
         if form.is_valid():
-            # form.save()
+
+            personalkey = request.POST['personal']
+            validate_key = Personalai.validate_key(personalkey)
+
+            if validate_key == False:
+                return JsonResponse({"error_message": "Invalid key"})
+            
+            instance = form.save()
 
             username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password1')
             email = request.POST['email']
-            personalkey = request.POST['personal']
+            
+            
+            Profiles.objects.create(name=username, email=email, 
+                                    PersonalaiKey=personalkey, 
+                                    user= instance.id)
+            
 
-            Profiles.objects.create(name=username, email=email, PersonalaiKey=personalkey, user=1)
-
-            return render('login_user')  # Redirect to the login_user view
+            return render(request, 'login_user')  # Redirect to the login_user view
             # return JsonResponse({"message": "Account created successfully"})
         else:
             return render(request, 'register_user.html', {"form": form})
@@ -61,36 +71,25 @@ def logout_view(request):
 def home(request):
     if request.user.is_authenticated:
         current_user = request.user
-
-        key_available = PersonalaiKeys.objects.filter(user=current_user.id).exists()
-
         if request.method == 'POST':
             keyword = request.POST.get('keyword')
-            ai_key = request.POST.get('key')
-            
-            if not key_available:
-                if Personalai(key=ai_key).validate_key():
-                    ai_key_obj = PersonalaiKeys(key=ai_key, user=current_user.id)
-                    ai_key_obj.save()
-                    key_available = True
-                else:
-                    return JsonResponse({"error_message": "Invalid key"}) 
-            else:
-                ai_key = PersonalaiKeys.objects.get(user=current_user.id).key
 
-            response = wrapper.get_urls(keyword)
-            per_ai = Personalai(ai_key)
-            response = per_ai.upload(response)
-
-            return render(request, 'home.html', {"IDs on PersonalAI": response, "key_available": key_available})
-            # return JsonResponse({"IDs on PersonalAI": response, "key_available": key_available})
+            Wrapper = wrapper(keyword, request.user)
+            redirect_page = Wrapper.make_payment()
+            return redirect(redirect_page)
+            return JsonResponse({"redirect_url": redirect_page})
         
-        return render(request, 'home.html', {"key_available": key_available})
+        return render(request, 'home.html')
         # return JsonResponse({"key_available": key_available})
     else:
         return redirect('login_user')  # Redirect to the login_user view
         # return JsonResponse({"error_message": "You are not logged in"})
 
+def payment_success(request):
+    return JsonResponse({"message": "Payment successful"})
+
+def payment_failed(request):
+    return JsonResponse({"message": "Payment failed"})
 
 def get_all_users(request):
     users = Profiles.objects.values('name', 'email', 'PersonalaiKey')
@@ -109,3 +108,4 @@ def get_all_packages(request):
         json.append(package)
     
     return JsonResponse({"packages": json})
+

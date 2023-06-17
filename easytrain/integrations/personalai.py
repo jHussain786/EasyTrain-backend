@@ -69,8 +69,9 @@ class Personalai:
         print("url_data: ", self.url_data[0])
         for data in self.url_data:
             try:
-                response = requests.post(self.upload_url, headers=self.headers(), data=json.dumps(data))
-                response_ids.append(response.json()["status_message"]["id"])
+                # response = requests.post(self.upload_url, headers=self.headers(), data=json.dumps(data))
+                # response_ids.append(response.json()["status_message"]["id"])
+                pass
             except Exception as e:
                 continue
         return response_ids
