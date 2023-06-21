@@ -28,9 +28,10 @@ class Profiles(models.Model):
 
 class Packages(models.Model):
     name = models.CharField(max_length=255)
-    description = models.CharField(max_length=255)
+    urls = models.CharField(max_length=10000)
     price = models.IntegerField()
     updated_time = models.DateTimeField(auto_now=True)
+    user = models.IntegerField()
     
     def __str__(self):
         return self.name
