@@ -1,10 +1,6 @@
 from . import google_crawler, multi_search_crawler
 from easytrainapp.models import DataCollectionUrls
 from datetime import datetime
-<<<<<<< Updated upstream
-
-def get_urls(query):
-=======
 from easytrainapp.models import Profiles, Packages
 from django.shortcuts import redirect
 from integrations.stripe_payment import StripePayment
@@ -46,21 +42,21 @@ class wrapper:
             return self.get_urls_from_db()
         else:
             return self.get_urls_from_crawlers()
->>>>>>> Stashed changes
     
-    if DataCollectionUrls.objects.filter(word=query).exists():
-        datacollection = DataCollectionUrls.objects.get(word=query)
+
+    def get_urls_from_db(self):
+        datacollection = DataCollectionUrls.objects.get(word=self.query)
         return datacollection.urls.split(" ")
     
-    else:
+    def get_urls_from_crawlers(self):
         urls = []
-        urls.extend(google_crawler.get_urls(query))
-        urls.extend(multi_search_crawler.MultiSearchCrawler(query).search_news())
+        urls.extend(google_crawler.get_urls(self.query))
+        urls.extend(multi_search_crawler.MultiSearchCrawler(self.query).search_news())
 
         str_urls = ""
         for url in urls:
             str_urls += url + " "
 
-        datacollection = DataCollectionUrls(word=query, urls=str_urls, updated_time= datetime.now())
+        datacollection = DataCollectionUrls(word=self.query, urls=str_urls, updated_time= datetime.now())
         datacollection.save()
         return urls
