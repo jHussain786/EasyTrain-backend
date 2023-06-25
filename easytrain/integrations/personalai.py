@@ -4,6 +4,7 @@ from datetime import datetime
 import time
 import json
 
+
 class Personalai:
     def __init__(self, key):
         self.url_data = []
@@ -29,19 +30,17 @@ class Personalai:
             return False
     
     def memory(self, text):
-        local_time = self.get_local_time()
 
-        memory_data = {
-        "Text": f"This is a test memory created at {local_time}, check your stack and see if it shows up",
-        "SourceName": "Python Memory Test Script",
-        "CreatedTime": local_time,
-        "DeviceName": "Change this Device Name Here",
-        "RawFeedText": f"<p>This is a test memory created at {local_time}, <p> with VE7LTX.CC Thanks for Testing Today!"
-    }
-    
+        data = {
+            "Text": text,
+            "SourceName": "EasyTrain App",
+            "DomainName": "EasyTraina.ai"
+        }
+        
+        data_json = json.dumps(data)
 
-        response = requests.post(self.memory_url, headers=self.headers(), json=memory_data)
-        breakpoint()
+        response = requests.post(self.memory_url, headers=self.headers(), data=data_json)
+
         if response.status_code == 200:
             creation_status = response.json()['status']
             return creation_status
@@ -54,8 +53,9 @@ class Personalai:
         return response.json()['ai_message']
 
     def upload(self, urls):
+
+
         for url in urls:
-            print("url: ", url)
             if url.strip() == "":
                 continue
             self.url_data.append(
@@ -67,14 +67,18 @@ class Personalai:
                 )
             
         response_ids = []
+        start_time = time.time()
+        elapsed_time = 0
         for data in self.url_data:
-            try:
-                response = requests.post(self.upload_url, headers=self.headers(), data=json.dumps(data))
-                response_ids.append(response.json()["status_message"]["id"])
-            except Exception as e:
-                self.memory(data['Url'])
-                continue
-        return response_ids
+
+            elapsed_time = time.time() - start_time
+            if elapsed_time > 45:
+                break
+            response = requests.post("https://api.personal.ai/v1/upload", headers=self.headers(), data=json.dumps(data))
+            response_ids.append(response.json())
+            
+
+        return "Urls uploaded to personalai" + str(response_ids)
         
     
     def get_local_time(self):

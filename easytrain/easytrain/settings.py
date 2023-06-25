@@ -20,6 +20,7 @@ from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+STRIPE_SECRET_KEY = 'sk_test_51NJ5snFG6tcOATfUzyIwbaGYjthtXjKq1eM6JorekWWZvjclXCQwJcjYRkuRRA8pGOzwVQ1we8D8L2Hdg2aTPzXS00iV2BxLBn'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -30,12 +31,13 @@ SECRET_KEY = 'django-insecure-5ssd7m$v%jy+=*aeu-=ood=kq*nk%m@7ev#ifl728*1a98xia7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
-
 API_STAGING_URL = 'env-staging-easytrain.eba-pdphuq2w.us-west-2.elasticbeanstalk.com/api'
 # Application definition
 
+
+
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -43,29 +45,29 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'easytrainapp',
-    'rest_framework',
-    'corsheaders'
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware'
 ]
 
-CORS_ORIGIN_ALLOW_ALL = True  
-# # or
-# CORS_ORIGIN_WHITELIST = [
-#     'http://example.com',
-#     'https://example.com',
-# ]  # Specify specific origins
 
+
+ALLOWED_HOSTS=['*']
+
+CORS_ORIGIN_ALLOW_ALL = False
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000"
+]
 
 ROOT_URLCONF = 'easytrain.urls'
 
@@ -90,6 +92,8 @@ WSGI_APPLICATION = 'easytrain.wsgi.application'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication'
     )
 }
 
@@ -108,8 +112,8 @@ DATABASES = {
         'NAME': 'ebdb',
         'USER': 'ebroot',
         'PASSWORD': 'ebrootebroot',
-        # awseb-e-f7puxg39gj-stack-awsebrdsdatabase-sfslhz3qqxfw.cnkzq1z3d7ns.us-west-2.rds.amazonaws.com
-        'HOST': 'awseb-e-2ac2jcwy9e-stack-awsebrdsdatabase-eurthb8fzq9d.carr303mirjv.us-west-2.rds.amazonaws.com',
+        # 
+        'HOST': 'awseb-e-f7puxg39gj-stack-awsebrdsdatabase-sfslhz3qqxfw.cnkzq1z3d7ns.us-west-2.rds.amazonaws.com',
         'PORT': '5432',
     }
 }
@@ -164,6 +168,6 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'jamillaghari2000@gmail.com'
-EMAIL_HOST_PASSWORD = "jamil.hussain"
+EMAIL_HOST_PASSWORD = "qfnxvonahqshptru"
 
 DEFAULT_FROM_EMAIL = 'jamillaghari2000@gmail.com'

@@ -130,12 +130,3 @@ class MultiSearchCrawler:
         urls = list(set(urls))
 
         return urls
-
-# if __name__ == "__main__":
-#     keyword = input("Enter a keyword to search for: ")
-
-#     gutenberg_results = MultiSearchCrawler.search_gutenberg(keyword)
-#     reddit_results = MultiSearchCrawler.search_reddit(keyword)
-#     youtube_results =MultiSearchCrawler.search_youtube(keyword)
-#     academic_journal_results =MultiSearchCrawler.search_academic_journals(keyword)
-#     news_results = MultiSearchCrawler.search_news(keyword)

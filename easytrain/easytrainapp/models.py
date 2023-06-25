@@ -32,14 +32,7 @@ class Packages(models.Model):
     price = models.IntegerField()
     updated_time = models.DateTimeField(auto_now=True)
     user = models.IntegerField()
+    is_active = models.BooleanField(default=False)
     
     def __str__(self):
         return self.name
-    
-class ProfilePackages(models.Model):
-    user = models.IntegerField()
-    package = models.IntegerField()
-    updated_time = models.DateTimeField(auto_now=True)
-    
-    def __str__(self):
-        return self.user

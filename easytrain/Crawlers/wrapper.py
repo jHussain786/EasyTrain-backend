@@ -16,10 +16,9 @@ class wrapper:
 
     def make_payment(self):
         price = int(self.calculate_price())
-        stripe = StripePayment(price)
+        stripe = StripePayment(price, 
+                               Profiles.objects.get(user=self.user.id))
         stripe_page = stripe.checkout_session()['url']
-
-        print(self.urls)
 
         Packages.objects.create(name=self.query, 
                                 urls= self.urls,

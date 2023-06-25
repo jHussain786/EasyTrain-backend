@@ -6,16 +6,14 @@ Replace: query with your search query
 """
 
 from googlesearch import search
-import requests
-from bs4 import BeautifulSoup
-import json
+
 def get_urls(query):
-    search_results = search(query, num_results=5)  
+    search_results = search(query, num_results=10)  
     urls = []
     for idx, result in enumerate(search_results):
         try:
             urls.append(result)
         except Exception as e:
             print(f"Error processing search result {idx + 1}: {e}")
-
+    print(urls)
     return urls
