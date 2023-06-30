@@ -17,7 +17,7 @@ class wrapper:
     def make_payment(self):
         price = int(self.calculate_price())
         stripe = StripePayment(price, 
-                               Profiles.objects.get(user=self.user.id))
+                               Profiles.objects.get(user=self.user.id), mode="query")
         stripe_page = stripe.checkout_session()['url']
 
         Packages.objects.create(name=self.query, 
@@ -56,6 +56,6 @@ class wrapper:
         for url in urls:
             str_urls += url + " "
 
-        datacollection = DataCollectionUrls(word=self.query, urls=str_urls, updated_time= datetime.now())
+        datacollection = DataCollectionUrls(word=self.query, urls=str_urls, updated_time= datetime.now(), user=self.user.id)
         datacollection.save()
         return urls

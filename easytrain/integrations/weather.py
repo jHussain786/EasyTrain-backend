@@ -1,5 +1,7 @@
 import requests
 from integrations.personalai import Personalai
+from easytrainapp.models import Profiles, WeatherData
+from .stripe_payment import StripePayment
 
 class WeatherData:
     def __init__(self, personal_api_key):
@@ -16,8 +18,14 @@ class WeatherData:
             for ey, val in data.items():
                 memory_message = memory_message + str(ey) + " value: " + str(val)
 
-            status = Personalai(self.personal_api_key).memory(memory_message)
-            return status
+            profile = Profiles.objects.get(PersonalaiKey=self.personal_api_key)
+            
+            WeatherData.objects.create(city_name=city_name, user=profile.user, weatherjson=data)
+
+            mode = "weather"
+            stripe_payment = StripePayment(int(self.calculate(memory_message)), profile, mode)
+
+            return stripe_payment.checkout_session() 
         else:
             return None
         
@@ -45,6 +53,7 @@ class WeatherData:
             for ey, val in data.items():
                 memory_message = memory_message + str(ey) + " value: " + str(val)
 
+
             status = Personalai(self.personal_api_key).memory(memory_message)
             return status
         else:
@@ -64,3 +73,12 @@ class WeatherData:
         for weather in weather_json:
             weather_string += weather['main'] + ', '
         return weather_string
+    
+    def calculate(self, memory_message):
+        total_price = 1
+        length = len(memory_message)
+        total_price = length + total_price
+
+        return total_price
+
+        

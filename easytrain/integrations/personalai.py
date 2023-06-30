@@ -70,12 +70,16 @@ class Personalai:
         start_time = time.time()
         elapsed_time = 0
         for data in self.url_data:
-
-            elapsed_time = time.time() - start_time
-            if elapsed_time > 45:
-                break
-            response = requests.post("https://api.personal.ai/v1/upload", headers=self.headers(), data=json.dumps(data))
-            response_ids.append(response.json())
+            try:
+               
+                elapsed_time = time.time() - start_time
+                if elapsed_time > 45:
+                    break
+                response = requests.post("https://api.personal.ai/v1/upload", headers=self.headers(), data=json.dumps(data))
+                response_ids.append(response.json())
+            except Exception as e:
+                self.memory("Error uploading url: " + url + " " + str(e))
+                continue
             
 
         return "Urls uploaded to personalai" + str(response_ids)

@@ -4,6 +4,7 @@ from django.contrib.auth import login, logout, authenticate
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from django.views.decorators.csrf import csrf_exempt
+from django import forms
 
 
 from .models import Profiles, Packages
@@ -13,6 +14,7 @@ from integrations.weather import WeatherData
 from Crawlers.wrapper import wrapper
 from rest_framework_simplejwt.tokens import RefreshToken
 from .tokens import account_activation_token
+from .models import DataCollectionUrls
 import asyncio
 
 
@@ -59,6 +61,7 @@ def activate_user(request, user, email):
     else:
         JsonResponse({"message": "Something went wrong, please try again later"})
 
+
 @csrf_exempt
 @api_view(['POST'])
 def register_user(request):
@@ -92,28 +95,42 @@ def register_user(request):
             return JsonResponse({"error_message": "Invalid form data", "message": form.errors})
     return JsonResponse({"form": "email sent. Please check your email to activate your account"})
 
+class LoginForm(forms.Form):
+    username = forms.CharField()
+    password = forms.CharField()
+
+
+
 @csrf_exempt
-@api_view(['POST'])
 def login_user(request):  
     if request.method == 'POST':
-        password = json.loads(request.body)['password']
-        username = json.loads(request.body)['username']
-        authenticated_user = authenticate(request, username=username,
-                                          password=password)
 
-        if authenticated_user is not None:
-            login(request, authenticated_user)
+        form = LoginForm(json.loads(request.body))
 
-            refresh = RefreshToken.for_user(authenticated_user)
-            jwt_token = str(refresh.access_token)
+        if form.is_valid():
+            payload = json.loads(request.body)
+            
+            password = payload['password']
+            username = payload['username']
 
-            access_token = str(refresh.access_token)
+            authenticated_user = authenticate(request, 
+                                            username=username,
+                                            password=password
+                                            )
 
-            return JsonResponse({"message": "Logged in successfully",
-                                  "access_token": access_token, 
-                                  "refresh_token": jwt_token})
-        else:
-            return JsonResponse({"error_message": "Invalid username or password"})
+            if authenticated_user is not None:
+                login(request, authenticated_user)
+
+                refresh = RefreshToken.for_user(authenticated_user)
+                jwt_token = str(refresh.access_token)
+
+                access_token = str(refresh.access_token)
+
+                return JsonResponse({"message": "Logged in successfully",
+                                    "access_token": access_token, 
+                                    "refresh_token": jwt_token})
+            else:
+                return JsonResponse({"error_message": "Invalid username or password"})
         
 @csrf_exempt
 @permission_classes([IsAuthenticated])
@@ -134,6 +151,87 @@ def home(request):
 
 @api_view(['GET'])
 def payment_success(request):
+    if request.GET.get("mode") == "query":
+        payment_successful_query(request)
+        return JsonResponse({"message": "Payment successful"})
+    elif request.GET.get("mode") == "weather":
+        payment_successful_weather(request)
+        return JsonResponse({"message": "Payment successful"})
+
+def payment_failed(request):
+    return JsonResponse({"message": "Payment failed and url upload to personalai failed"})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_all_users(request):
+    users = Profiles.objects.values('id', 'name', 'email', 'updated_time')
+    
+    json = []
+    for user in users:
+        user_package = Packages.objects.filter(user=Profiles.objects.get(email=user['email']).user)
+        user['usage'] = len(user_package)
+        user['queries'] = len(DataCollectionUrls.objects.filter(user=Profiles.objects.get(email=user['email']).user))
+        user['total_amount_paid'] = sum([package.price for package in user_package])
+        user['total_usage'] = sum([len(package.urls.split(',')) for package in user_package])
+
+        json.append(user)
+    
+    return JsonResponse({"users": json})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_all_packages(request):
+    packages = Packages.objects.values('id', 'query', 'user', 'price', 'is_active')
+    json = []
+
+    user = get_user_model()
+
+    for package in packages:
+        package['usage'] = Packages.objects.filter(user=package['user']).count()
+        # package['user'] = user.objects.get(id=package['user']).username
+        json.append(package)
+    
+    return JsonResponse({"packages": json})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def weather(request):
+    try:
+        city = json.loads(request.body)['city']
+        personalkey = Profiles.objects.get(user=request.user.id).PersonalaiKey
+        weather_data = WeatherData(personalkey).get_weather_data_by_city_name(city)
+        return JsonResponse({"redirect_url": weather_data})
+    except Exception as e:
+        return JsonResponse({"message": "Something went wrong", "error": str(e)})
+
+def health(request):
+    return JsonResponse({"message": "Server is up and running"})
+
+@csrf_exempt
+@permission_classes([IsAuthenticated])
+def delete_user(request):
+    try:
+        email = json.loads(request.body)['email']
+        user = Profiles.objects.get(email=email)
+        user.delete()
+        User = get_user_model()
+        user = User.objects.get(email=email)
+        user.delete()
+        return JsonResponse({"message": "User deleted successfully"})
+    except Exception as e:
+        return JsonResponse({"message": "User not found"})
+
+@csrf_exempt
+@permission_classes([IsAuthenticated])
+def delete_package(request):
+    package_id = json.loads(request.body)['package_id']
+    package = Packages.objects.get(id=package_id)
+    package.delete()
+    return JsonResponse({"message": "Package deleted successfully"})
+
+
+
+def payment_successful_query(request):
     try:
         user_id = Profiles.objects.get(email=request.GET.get("email")).user
         user_package = Packages.objects.filter(user=user_id).last()
@@ -149,62 +247,21 @@ def payment_success(request):
 
         urls = [url.strip().strip("'") for url in urls if url.strip().strip("'")]
 
-        response = asyncio.run(personalai.upload_async(urls))
+        response = personalai.upload(urls)
         
         return JsonResponse({"message": "Payment successful" , "response": response})
     except Exception as e:
         return JsonResponse({"message": "Payment successful but urls not uploaded to personalai", "error": str(e)})
 
-def payment_failed(request):
-    return JsonResponse({"message": "Payment failed and url upload to personalai failed"})
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_all_users(request):
-    users = Profiles.objects.values('name', 'email', 'PersonalaiKey')
-    json = []
-    for user in users:
-        json.append(user)
-    return JsonResponse({"users": json})
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_all_packages(request):
-    packages = Packages.objects.values('name', 'updated_time', 'urls', 'price')
-    json = []
-
-    for package in packages:
-        json.append(package)
-    
-    return JsonResponse({"packages": json})
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def weather(request):
-    city = json.loads(request.body)['city']
-    personalkey = Profiles.objects.get(user=request.user.id).PersonalaiKey
-    weather_data = WeatherData(personalkey).get_weather_data_by_city_name(city)
-    return JsonResponse({"message": "Weather data uploaded to personalai", "weather_data": weather_data})
-
-def health(request):
-    return JsonResponse({"message": "Server is up and running"})
-
-@csrf_exempt
-def delete_user(request):
+def payment_successful_weather(request):
     try:
-        email = json.loads(request.body)['email']
-        user = Profiles.objects.get(email=email)
-        user.delete()
-        User = get_user_model()
-        user = User.objects.get(email=email)
-        user.delete()
-        return JsonResponse({"message": "User deleted successfully"})
+        profile = Profiles.objects.get(email=request.GET.get("email"))
+        
+        weatherData = WeatherData.objects.get(user=profile.user).weatherjson
+        
+        response = Personalai(profile.PersonalaiKey).memory(str(weatherData))
+        
+        return JsonResponse({"message": "Payment successful" , "response": response})
+    
     except Exception as e:
-        return JsonResponse({"message": "User not found"})
-
-@csrf_exempt
-def delete_package(request):
-    package_id = json.loads(request.body)['package_id']
-    package = Packages.objects.get(id=package_id)
-    package.delete()
-    return JsonResponse({"message": "Package deleted successfully"})
+        return JsonResponse({"message": "Payment successful but urls not uploaded to personalai", "error": str(e)})
