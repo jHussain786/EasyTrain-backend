@@ -5,6 +5,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from django.views.decorators.csrf import csrf_exempt
 from django import forms
+from django.core.serializers import serialize
 
 
 from .models import Profiles, Packages
@@ -271,4 +272,17 @@ def payment_successful_weather(request):
     
     except Exception as e:
         return JsonResponse({"message": "Payment successful but urls not uploaded to personalai", "error": str(e)})
+
+@csrf_exempt
+@permission_classes([IsAuthenticated])
+def dashboard(request):
+    if request.method == "POST":
+        try:
+            return JsonResponse({"packages_count": len(json.loads(serialize('json', Packages.objects.all()))), 
+                                "user_count": len(json.loads(serialize('json', Profiles.objects.all()))), 
+                                "query_count": len(json.loads(serialize('json', DataCollectionUrls.objects.all()))), 
+                                "recent_users": json.loads(serialize('json', Profiles.objects.all().order_by('-updated_time')))})
+                                
+        except Exception as e:
+            return JsonResponse({"message": "Something went wrong", "error": str(e)})
     
