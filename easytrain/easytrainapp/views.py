@@ -6,6 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.views.decorators.csrf import csrf_exempt
 from django import forms
 from django.core.serializers import serialize
+from datetime import datetime, timedelta
+from django.utils import timezone
 
 
 from .models import Profiles, Packages
@@ -281,8 +283,127 @@ def dashboard(request):
             return JsonResponse({"packages_count": len(json.loads(serialize('json', Packages.objects.all()))), 
                                 "user_count": len(json.loads(serialize('json', Profiles.objects.all()))), 
                                 "query_count": len(json.loads(serialize('json', DataCollectionUrls.objects.all()))), 
-                                "recent_users": json.loads(serialize('json', Profiles.objects.all().order_by('-updated_time')))})
-                                
+                                "recent_users": json.loads(serialize('json', Profiles.objects.all().order_by('-updated_time')))
+                                })
         except Exception as e:
             return JsonResponse({"message": "Something went wrong", "error": str(e)})
-    
+
+@csrf_exempt
+@permission_classes([IsAuthenticated])
+def cards(request):
+    if request.method == "POST":
+        try:
+            mode = json.loads(request.body)['mode']
+
+            if mode == 'weekly':
+                today = datetime.now(timezone.utc)
+                dates = [today - timedelta(days=i) for i in range(7)]
+                dates = [date.replace(tzinfo=timezone.utc) for date in dates]
+
+                day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                
+                data = []
+
+                for date in dates:
+                    start_date = date.replace(hour=0, minute=0, second=0)
+                    end_date = date.replace(hour=23, minute=59, second=59)
+                    profiles = Profiles.objects.filter(updated_time__range=[start_date, end_date])
+                    queries = DataCollectionUrls.objects.filter(updated_time__range=[start_date, end_date])
+                    income = Packages.objects.filter(updated_time__range=[start_date, end_date]).values('price')
+                    income = sum([i['price'] for i in income])
+                    urls = [url for query in queries for url in query.urls.split(',')]
+                    
+
+                    user_count = len(profiles)
+
+                    day_name = day_names[date.weekday()]
+                    data.append({
+                        day_name: {
+                            "users": user_count,
+                            "queries": len(queries),
+                            "income": income,
+                            "links": len(urls)
+                        }
+                    })
+
+                return JsonResponse({"cards": data})
+
+            if mode == 'monthly':
+
+                today = datetime.now(timezone.utc)
+                dates = [today - timedelta(days=i) for i in range(30)]
+                dates = [date.replace(tzinfo=timezone.utc) for date in dates]
+
+                data = []
+
+                for date in dates:
+                    start_date = date.replace(hour=0, minute=0, second=0)
+                    end_date = date.replace(hour=23, minute=59, second=59)
+                    profiles = Profiles.objects.filter(updated_time__range=[start_date, end_date])
+                    queries = DataCollectionUrls.objects.filter(updated_time__range=[start_date, end_date])
+                    income = Packages.objects.filter(updated_time__range=[start_date, end_date]).values('price')
+                    income = sum([i['price'] for i in income])
+                    urls = [url for query in queries for url in query.urls.split(',')]
+                    
+
+                    user_count = len(profiles)
+
+                    data.append({
+                        str(date.date()): {
+                            "users": user_count,
+                            "queries": len(queries),
+                            "income": income,
+                            "links": len(urls)
+                        }
+                    })
+
+                return JsonResponse({"cards": data})
+                
+            
+            if mode == 'yearly':
+                today = datetime.now(timezone.utc)
+                dates = [today - timedelta(days=i) for i in range(365, 0, -31)]
+                dates = [date.replace(tzinfo=timezone.utc) for date in dates]
+
+                data = []
+
+                month_names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
+                                'October', 'November', 'December']
+                
+                
+
+                for date in dates:
+                    start_date = date.replace(day =1, hour=0, minute=0, second=0)
+
+                    end_day = 31 if date.month in [1, 3, 5, 7, 8, 10, 12] else 30
+                    if date.month == 2:
+                        end_day = 28
+
+                    end_date = date.replace(day = end_day,hour=23, minute=59, second=59)
+                    profiles = Profiles.objects.filter(updated_time__range=[start_date, end_date])
+                    queries = DataCollectionUrls.objects.filter(updated_time__range=[start_date, end_date])
+                    income = Packages.objects.filter(updated_time__range=[start_date, end_date]).values('price')
+                    income = sum([i['price'] for i in income])
+                    urls = [url for query in queries for url in query.urls.split(',')]
+                    
+
+                    user_count = len(profiles)
+
+                    month_name = month_names[date.month - 1]
+
+                    data.append({
+                        month_name: {
+                            "users": user_count,
+                            "queries": len(queries),
+                            "income": income,
+                            "links": len(urls),
+                            "date": str(date.date())
+                        }
+                    })
+
+            return JsonResponse({"cards": data})           
+
+            
+        except Exception as e:
+            return JsonResponse({"message": "Something went wrong", "error": str(e)})
+    return JsonResponse({"cards": []})

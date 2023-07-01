@@ -18,6 +18,7 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/dashboard/', views.dashboard, name='dashboard'),
+    path('api/cards/', views.cards, name='card'),
 
     path('api/payment_failed/', views.payment_failed, name='payment_failed'),
     path('activate/<uidb64>/<token>', views.activate, name='activate'),
