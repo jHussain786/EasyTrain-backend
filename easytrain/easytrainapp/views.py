@@ -188,9 +188,12 @@ def get_all_packages(request):
 
     for package in packages:
         package['usage'] = Packages.objects.filter(user=package['user']).count()
-        # package['user'] = user.objects.get(id=package['user']).username
+        try:
+            package['user'] = user.objects.get(id=package['user']).username
+        except:
+            package['user'] = "None"
         json.append(package)
-    
+        
     return JsonResponse({"packages": json})
 
 @api_view(['GET'])
@@ -217,6 +220,9 @@ def delete_user(request):
         User = get_user_model()
         user = User.objects.get(email=email)
         user.delete()
+        package = Packages.objects.filter(user=user)
+        package.delete()
+        DataCollectionUrls.objects.filter(user=user).delete()
         return JsonResponse({"message": "User deleted successfully"})
     except Exception as e:
         return JsonResponse({"message": "User not found"})
@@ -265,3 +271,4 @@ def payment_successful_weather(request):
     
     except Exception as e:
         return JsonResponse({"message": "Payment successful but urls not uploaded to personalai", "error": str(e)})
+    
