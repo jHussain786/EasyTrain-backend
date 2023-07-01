@@ -29,7 +29,6 @@ class Profiles(models.Model):
 
 class Packages(models.Model):
     query = models.CharField(max_length=255)
-    urls = models.CharField(max_length=10000)
     price = models.IntegerField()
     updated_time = models.DateTimeField(auto_now=True)
     user = models.IntegerField()
