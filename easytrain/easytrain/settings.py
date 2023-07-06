@@ -170,4 +170,4 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'jamillaghari2000@gmail.com'
 EMAIL_HOST_PASSWORD = "qfnxvonahqshptru"
 
-DEFAULT_FROM_EMAIL = 'jamillaghari2000@gmail.com'
+DEFAULT_FROM_EMAIL = 'jamillaghari2000@gmail.com'   
