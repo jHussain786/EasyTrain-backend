@@ -8,7 +8,8 @@ from django import forms
 from django.core.serializers import serialize
 from datetime import datetime, timedelta
 from django.utils import timezone
-
+from django.contrib.auth.models import User
+from django.db import SomeError, transaction
 
 from .models import Profiles, Packages
 from django.http import JsonResponse
@@ -79,18 +80,21 @@ def register_user(request):
 
             if validate_key == False:
                 return JsonResponse({"error_message": "Invalid key"})
-            
-            instance = form.save(commit=False)
+            try:
+                with transaction.atomic():
+                    instance = form.save(commit=False)
 
-            instance.is_active=False
-            instance.save()
+                    instance.is_active=False
+                    instance.save()
 
-            Profiles.objects.create(name=instance.username, 
-                                    email=data['email'], 
-                                    PersonalaiKey=personalkey, 
-                                    user= instance.id)
+                    Profiles.objects.create(name=instance.username, 
+                                            email=data['email'], 
+                                            PersonalaiKey=personalkey, 
+                                            user= instance.id)
 
-            activate_user(request, instance, data['email'])
+                    activate_user(request, instance, data['email'])
+            except Exception as e:
+                return JsonResponse({"error_message": "Something went wrong", "message": str(e)})
 
         else:
             return JsonResponse({"error_message": "Invalid form data", "message": form.errors})
@@ -99,8 +103,6 @@ def register_user(request):
 class LoginForm(forms.Form):
     username = forms.CharField()
     password = forms.CharField()
-
-
 
 @csrf_exempt
 def login_user(request):  
@@ -124,12 +126,21 @@ def login_user(request):
 
                 refresh = RefreshToken.for_user(authenticated_user)
                 jwt_token = str(refresh.access_token)
+                email = authenticated_user.email
+                username = authenticated_user.username
+                user_id = authenticated_user.id
+                is_staff = authenticated_user.is_staff
 
                 access_token = str(refresh.access_token)
 
                 return JsonResponse({"message": "Logged in successfully",
                                     "access_token": access_token, 
-                                    "refresh_token": jwt_token})
+                                    "refresh_token": jwt_token,
+                                    "email": email,
+                                    "username": username,
+                                    "user_id": user_id,
+                                    "is_staff": is_staff
+                                    })
             else:
                 return JsonResponse({"error_message": "Invalid username or password"})
         
@@ -143,10 +154,14 @@ def logout_view(request):
 @permission_classes([IsAuthenticated])
 def home(request):
     try:
-        keyword = json.loads(request.body)['keyword']
-        Wrapper = wrapper(keyword, request.user)
-        redirect_page = Wrapper.make_payment()
-        return JsonResponse({"redirect_url": redirect_page})
+        data = json.loads(request.body)
+        if data['type'] == 'dataset':
+            keyword = data['keyword']
+            Wrapper = wrapper(keyword, request.user)
+            redirect_page = Wrapper.make_payment()
+            return JsonResponse({"redirect_url": redirect_page})
+        else:
+            return JsonResponse({"message": "Only dataset type is implemeted yet"})
     except Exception as e:
         return JsonResponse({"message": "Something went wrong", "error": str(e)})
 
@@ -263,9 +278,7 @@ def payment_successful_query(request):
 def payment_successful_weather(request):
     try:
         profile = Profiles.objects.get(email=request.GET.get("email"))
-        
         weatherData = WeatherData.objects.get(user=profile.user).weatherjson
-        
         response = Personalai(profile.PersonalaiKey).memory(str(weatherData))
         
         return JsonResponse({"message": "Payment successful" , "response": response})
@@ -405,3 +418,44 @@ def cards(request):
         except Exception as e:
             return JsonResponse({"message": "Something went wrong", "error": str(e)})
     return JsonResponse({"cards": []})
+
+@csrf_exempt
+@permission_classes([IsAuthenticated])
+def get_user_data(request):
+    if request.method == "GET":
+        try:
+            mail = json.loads(request.body)['email']
+            user = json.loads(serialize('json', Profiles.objects.filter(email=mail)))
+            user_id = user[0]['fields']['user']
+            total_packages = len(json.loads(serialize('json', Packages.objects.filter(user=user_id))))
+            total_amount_paid = sum([package['fields']['price'] for package in json.loads(serialize('json', Packages.objects.filter(user=user_id)))])
+            total_links = sum([(len(data_url['fields']['urls'].split(' '))) for data_url in json.loads(serialize('json', DataCollectionUrls.objects.filter(user=user_id)))])
+            total_queries = len(json.loads(serialize('json', DataCollectionUrls.objects.filter(user=user_id))))
+            return JsonResponse({"user": user, 
+                                 "record":
+                                 { "total_packages": total_packages,
+                                   "total_amount_paid": total_amount_paid,
+                                     "total_links": total_links,
+                                     "total_queries": total_queries
+                                     }})
+        except Exception as e:
+            return JsonResponse({"message": "Something went wrong", "error": str(e)})
+    return JsonResponse({"Record": {}})
+
+@csrf_exempt
+@permission_classes([IsAuthenticated])
+def change_user_information(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        if data['username'] != request.user.username:
+            JsonResponse({"message": "You are not allowed to change password of other users"})
+        
+        try:
+            user = User.objects.get(username=data['username'])
+            user.set_password(data['password'])
+            user.save()
+            return JsonResponse({"message": "User password updated successfully"})
+        except Exception as e:
+            return JsonResponse({"message": "Something went wrong", "error": str(e)})
+    return JsonResponse({"message": "Something went wrong"})
+

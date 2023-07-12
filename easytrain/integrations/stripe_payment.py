@@ -55,8 +55,8 @@ class StripePayment:
             print(f"Error: {e}")
 
     def checkout_session(self):
-        # BASE_URL = "http://staging-env-easytrain.eba-syvqgi3q.us-west-2.elasticbeanstalk.com"
-        BASE_URL = "http://localhost:8000"
+        BASE_URL = "http://staging-env-easytrain.eba-syvqgi3q.us-west-2.elasticbeanstalk.com"
+        # BASE_URL = "http://localhost:8000"
         success_url = BASE_URL + "/api/payment_success/"
         failure_url = BASE_URL + "/api/payment_failed/"
 
