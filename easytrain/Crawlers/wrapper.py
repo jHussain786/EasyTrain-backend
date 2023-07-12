@@ -20,8 +20,7 @@ class wrapper:
                                Profiles.objects.get(user=self.user.id), mode="query")
         stripe_page = stripe.checkout_session()['url']
 
-        Packages.objects.create(name=self.query, 
-                                urls= self.urls,
+        Packages.objects.create(query=self.query, 
                                 price=price, 
                                 is_active=False,
                                 user=self.user.id

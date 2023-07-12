@@ -69,10 +69,8 @@ def activate_user(request, user, email):
 
 
 @csrf_exempt
-@api_view(['GET'])
 def register_user(request):
-    form = UserCreationForm()
-    if request.method == 'GET':
+    if request.method == 'POST':
         form = UserCreationForm(json.loads(request.body))
         
         if form.is_valid():
@@ -206,127 +204,13 @@ def get_all_packages(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def weather(request):
-        try:
-            user=request.user.id
-            weather_data = Weather.get_weather_payment(user)
-            return JsonResponse({"redirect_url": weather_data})
-        except Exception as e:
-            error_message = str(e)
-            traceback.print_exc()  # This will print the traceback to the console for debugging purposes
-            return JsonResponse({"error": error_message})
-
-        
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])   
-def weather_saving_data_to_ai(request):
-        try:
-            city = json.loads(request.body)['city']
-            Weather().send_weather_data_to_ai(city,request.user.id)
-            return JsonResponse({"message": "Data Saved to AI"})
-        except Exception as e:
-            error_message = str(e)
-            return JsonResponse({"error": error_message})
-        
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def stock(request):
-        try:
-            user=request.user.id
-            stock_data = StockData.get_stock_payment(user)
-            return JsonResponse({"redirect_url": stock_data})
-        except Exception as e:
-            error_message = str(e)
-            traceback.print_exc()  # This will print the traceback to the console for debugging purposes
-            return JsonResponse({"error": error_message})
-                
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])   
-def stock_data_by_symbol(request):
-        try:
-            symbol = json.loads(request.body)['symbol']
-            StockData().get_stock_data_by_symbol(symbol,request.user.id)
-            return JsonResponse({"message": "Data Saved to AI"})
-        except Exception as e:
-            error_message = str(e)
-            return JsonResponse({"error": error_message})
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])   
-def stock_search(request):
-        try:
-            keyword = json.loads(request.body)['keyword']
-            data=StockData().keyword_search(keyword)
-            return JsonResponse({"data":data })
-        except Exception as e:
-            error_message = str(e)
-            return JsonResponse({"error": error_message})
-
-# @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
-# def weatherforcast(request):
-#         try:
-#             user=request.user.id
-#             weather_data = Weather().get_forecast_payment(user)
-#             return JsonResponse({"redirect_url": weather_data})
-#         except Exception as e:
-#             error_message = str(e)
-#             traceback.print_exc()  # This will print the traceback to the console for debugging purposes
-#             return JsonResponse({"error": error_message})
-        
-    
-        
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])   
-# def weatherforcast_saving_data_to_ai(request):
-#        try:
-#             city = json.loads(request.body)['city']
-#             Weather().send_forecast_data_TO_ai(city,request.user.id)
-#             return JsonResponse({"message": "Data Saved to AI"})
-#        except Exception as e:
-#             error_message = str(e)
-#             return JsonResponse({"error": error_message})
-
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def weatherhistory(request):
-#     try:
-#             user=request.user.id
-#             weather_data = Weather.get_forecast_payment(user)
-#             return JsonResponse({"redirect_url": weather_data})
-#     except Exception as e:
-#             error_message = str(e)
-#             traceback.print_exc()  # This will print the traceback to the console for debugging purposes
-#             return JsonResponse({"error": error_message})
-        
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])   
-# def weatherhistory_saving_data_to_ai(request):
-#     try:
-#             city = json.loads(request.body)['city']
-#             Weather().send_history_data_TO_ai(city,request.user.id)
-#             return JsonResponse({"message": "Data Saved to AI"})
-#     except Exception as e:
-#             error_message = str(e)
-#             return JsonResponse({"error": error_message})
-# def weatherlatlon(request):
-#     try:
-#         lat = json.loads(request.body)['lat']
-#         lon = json.loads(request.body)['lon']
-#         print(request.user.id)
-#         personalkey = Profiles.objects.filter(user=request.user.id).first().PersonalaiKey
-#         weather_data = Weather(personalkey).get_weather_data_by_lat_lon(lat,lon)
-#         return JsonResponse({"redirect_url": weather_data})
-#     except Exception as e:
-#         return JsonResponse({"message": "Some Error Occured"})
-        
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])   
-# def weatherlatlon_saving_data_to_ai(request):
-#         print(request.user.id)
-#         personalkey = Profiles.objects.filter(user=request.user.id).first().PersonalaiKey
-#         Weather(personalkey).send_latlon_data_TO_ai(request.user.id)
-#         return JsonResponse({"message": "Saved"})
+    try:
+        city = json.loads(request.body)['city']
+        personalkey = Profiles.objects.get(user=request.user.id).PersonalaiKey
+        weather_data = WeatherData(personalkey).get_weather_data_by_city_name(city)
+        return JsonResponse({"redirect_url": weather_data})
+    except Exception as e:
+        return JsonResponse({"message": "Something went wrong", "error": str(e)})
 
 def health(request):
     return JsonResponse({"message": "Server is up and running"})
