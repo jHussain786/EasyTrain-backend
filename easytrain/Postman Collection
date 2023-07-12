@@ -117,7 +117,7 @@
 					"bearer": [
 						{
 							"key": "token",
-							"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjg3NzMzNzQ5LCJpYXQiOjE2ODc3MTU3NDksImp0aSI6ImEyNTRiZGUyZmZlNDRiYjVhYmJhODgyNzI1N2QxMTQwIiwidXNlcl9pZCI6MTF9.ogcKLOMzfKI_LG0HtmdyYl0snPr1JbpjhNJK-0N0hn0",
+							"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjg4ODI4NzczLCJpYXQiOjE2ODg4MTA3NzMsImp0aSI6IjBmNDg4MjRhMzZiZjQ0ODM5NTBjYjFjNzZlZDYzODBjIiwidXNlcl9pZCI6MTF9.7DCD5VdHr5MhV2aRTbC8f5C-fhtn-H5BZWBKK1OC7k0",
 							"type": "string"
 						}
 					]
@@ -126,7 +126,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"keyword\": \"hands dataset 2022\"\r\n}",
+					"raw": "{\r\n    \"keyword\": \"dynamic hand gestures dataset\",\r\n    \"type\": \"dataset\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -134,15 +134,12 @@
 					}
 				},
 				"url": {
-					"raw": "http://staging-env-easytrain.eba-syvqgi3q.us-west-2.elasticbeanstalk.com/api/query/",
+					"raw": "http://localhost:8000/api/query/",
 					"protocol": "http",
 					"host": [
-						"staging-env-easytrain",
-						"eba-syvqgi3q",
-						"us-west-2",
-						"elasticbeanstalk",
-						"com"
+						"localhost"
 					],
+					"port": "8000",
 					"path": [
 						"api",
 						"query",
@@ -381,6 +378,69 @@
 					"path": [
 						"api",
 						"delete_package",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get user data",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"jamillaghari2000@gmail.com\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/get_user_data/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"get_user_data",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Settings",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"jamilhussain6771\",\r\n    \"password\": \"Jamil.hussain\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/change_user_information/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"change_user_information",
 						""
 					]
 				}

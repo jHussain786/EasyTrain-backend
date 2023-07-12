@@ -19,6 +19,9 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/dashboard/', views.dashboard, name='dashboard'),
     path('api/cards/', views.cards, name='card'),
+    path('api/get_user_data/', views.get_user_data, name='get_user_data'),
+    path('api/change_user_information/', views.change_user_information, name='change_user_information'),
+
 
     path('api/payment_failed/', views.payment_failed, name='payment_failed'),
     path('activate/<uidb64>/<token>', views.activate, name='activate'),
