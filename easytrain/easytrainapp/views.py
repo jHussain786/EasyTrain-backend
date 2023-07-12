@@ -66,9 +66,7 @@ def activate_user(request, user, email):
 
 
 @csrf_exempt
-@api_view(['POST'])
 def register_user(request):
-    form = UserCreationForm()
     if request.method == 'POST':
         form = UserCreationForm(json.loads(request.body))
         
@@ -278,7 +276,7 @@ def payment_successful_weather(request):
 @csrf_exempt
 @permission_classes([IsAuthenticated])
 def dashboard(request):
-    if request.method == "POST":
+    if request.method == "GET":
         try:
             return JsonResponse({"packages_count": len(json.loads(serialize('json', Packages.objects.all()))), 
                                 "user_count": len(json.loads(serialize('json', Profiles.objects.all()))), 
@@ -291,7 +289,7 @@ def dashboard(request):
 @csrf_exempt
 @permission_classes([IsAuthenticated])
 def cards(request):
-    if request.method == "POST":
+    if request.method == "GET":
         try:
             mode = json.loads(request.body)['mode']
 
