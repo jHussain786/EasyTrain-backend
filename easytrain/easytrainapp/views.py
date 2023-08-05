@@ -10,7 +10,6 @@ from django.core.serializers import serialize
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.contrib.auth.models import User
-from django.db import SomeError, transaction
 
 from .models import Profiles, Packages
 from django.http import JsonResponse
@@ -82,21 +81,18 @@ def register_user(request):
 
             if validate_key == False:
                 return JsonResponse({"error_message": "Invalid key"})
-            try:
-                with transaction.atomic():
-                    instance = form.save(commit=False)
 
-                    instance.is_active=False
-                    instance.save()
+            instance = form.save(commit=False)
 
-                    Profiles.objects.create(name=instance.username, 
-                                            email=data['email'], 
-                                            PersonalaiKey=personalkey, 
-                                            user= instance.id)
+            instance.is_active=False
+            instance.save()
 
-                    activate_user(request, instance, data['email'])
-            except Exception as e:
-                return JsonResponse({"error_message": "Something went wrong", "message": str(e)})
+            Profiles.objects.create(name=instance.username, 
+                                    email=data['email'], 
+                                    PersonalaiKey=personalkey, 
+                                    user= instance.id)
+
+            activate_user(request, instance, data['email'])
 
         else:
             return JsonResponse({"error_message": "Invalid form data", "message": form.errors})
@@ -182,7 +178,7 @@ def payment_failed(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_all_users(request):
-    users = Profiles.objects.values('id', 'name', 'email', 'updated_time')
+    users = Profiles.objects.values('id', 'name', 'email', 'updated_time').order_by('-updated_time')[:5]
     
     json = []
     for user in users:
@@ -190,11 +186,11 @@ def get_all_users(request):
         user['usage'] = len(user_package)
         user['queries'] = len(DataCollectionUrls.objects.filter(user=Profiles.objects.get(email=user['email']).user))
         user['total_amount_paid'] = sum([package.price for package in user_package])
-        user['total_usage'] = sum([len(package.urls.split(',')) for package in user_package])
+        user['total_usage'] = sum(len(DataCollectionUrls.urls.split(',')) for DataCollectionUrls in DataCollectionUrls.objects.filter(user=Profiles.objects.get(email=user['email']).user)) 
 
         json.append(user)
     
-    return JsonResponse({"users": json})
+    return JsonResponse({"users": json}) 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -539,11 +535,10 @@ def cards(request):
 @csrf_exempt
 @permission_classes([IsAuthenticated])
 def get_user_data(request):
-    if request.method == "GET":
+    if request.method == "POST":
         try:
-            mail = json.loads(request.body)['email']
-            user = json.loads(serialize('json', Profiles.objects.filter(email=mail)))
-            user_id = user[0]['fields']['user']
+            user_id = json.loads(request.body)['user_id']
+            user = json.loads(serialize('json', Profiles.objects.filter(user=user_id)))
             total_packages = len(json.loads(serialize('json', Packages.objects.filter(user=user_id))))
             total_amount_paid = sum([package['fields']['price'] for package in json.loads(serialize('json', Packages.objects.filter(user=user_id)))])
             total_links = sum([(len(data_url['fields']['urls'].split(' '))) for data_url in json.loads(serialize('json', DataCollectionUrls.objects.filter(user=user_id)))])
@@ -552,12 +547,13 @@ def get_user_data(request):
                                  "record":
                                  { "total_packages": total_packages,
                                    "total_amount_paid": total_amount_paid,
-                                     "total_links": total_links,
+                                     "total_links": total_links, 
                                      "total_queries": total_queries
                                      }})
         except Exception as e:
             return JsonResponse({"message": "Something went wrong", "error": str(e)})
-    return JsonResponse({"Record": {}})
+    else:
+        return JsonResponse({"message": "Request must be POST"})
 
 @csrf_exempt
 @permission_classes([IsAuthenticated])
@@ -576,3 +572,18 @@ def change_user_information(request):
             return JsonResponse({"message": "Something went wrong", "error": str(e)})
     return JsonResponse({"message": "Something went wrong"})
 
+@csrf_exempt
+@permission_classes([IsAuthenticated])
+def get_queries_by_user_id(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        if data['user_id'] != request.user.id:
+            JsonResponse({"message": "You are not allowed to get queries of other users"})
+        try:
+            user_id = json.loads(request.body)['user_id']
+            queries = json.loads(serialize('json', DataCollectionUrls.objects.filter(user=user_id)))
+            return JsonResponse({"queries": queries})
+        except Exception as e:
+            return JsonResponse({"message": "Something went wrong", "error": str(e)})
+    else:
+        return JsonResponse({"message": "Request must be POST"})
