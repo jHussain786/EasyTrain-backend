@@ -21,8 +21,6 @@ urlpatterns = [
     path('api/cards/', views.cards, name='card'),
     path('api/get_user_data/', views.get_user_data, name='get_user_data'),
     path('api/change_user_information/', views.change_user_information, name='change_user_information'),
-
-
     path('api/payment_failed/', views.payment_failed, name='payment_failed'),
     path('activate/<uidb64>/<token>', views.activate, name='activate'),
     path('api/message/', views.message, name='message'),
@@ -62,6 +60,7 @@ urlpatterns = [
 
     path('api/delete_user/', views.delete_user, name='delete_user'),
     path('api/delete_package/', views.delete_package, name='delete_package'),
-    path('', views.health, name='health')
+    path('api/get_queries/', views.get_queries_by_user_id, name='get_queries_by_user_id'),
+    path('', views.health, name='health'),
 
 ]
