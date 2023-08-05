@@ -42,6 +42,6 @@ class WeatherData(models.Model):
     updated_time = models.DateTimeField(auto_now=True)
     user = models.IntegerField()
     weatherjson = models.CharField(max_length=10000)
-    
     def __str__(self):
         return self.city_name
+        
