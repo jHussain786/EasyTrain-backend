@@ -12,7 +12,7 @@ class StockData:
     def get_stock_payment(userid):
             profile = Profiles.objects.filter(user=userid).first()
             mode = "stock"
-            stripe_payment = StripePayment(int(1735), profile, mode)
+            stripe_payment = StripePayment(int(1735),'stock', profile, mode)
             return stripe_payment.checkout_session()   
       
     def get_stock_data_by_symbol(self,symbol,user):

@@ -7,11 +7,11 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class StripePayment:
     
-    def __init__(self, amount, customer, mode=""):
+    def __init__(self, amount,paymenttype, customer, mode=""):
         self.amount = amount
         self.customer = customer
         self.mode = mode
-    
+        self.paymenttype=paymenttype
     def create_one_time_price(self):
         try:
             product_id = self.create_product("EasyTrain Purchase").stripe_id
@@ -56,10 +56,13 @@ class StripePayment:
 
     def checkout_session(self):
         # BASE_URL = "http://staging-env-easytrain.eba-syvqgi3q.us-west-2.elasticbeanstalk.com"
-        BASE_URL = "http://localhost:8000"
-        success_url = BASE_URL + "/api/payment_success/"
-        failure_url = BASE_URL + "/api/payment_failed/"
-
+        BASE_URL = "http://localhost:3000"
+        if(self.paymenttype=='weather'):
+            success_url = BASE_URL + "/user/weather-success/"
+            failure_url = BASE_URL + "/user/weather-failed/"
+        else:
+            success_url = BASE_URL + "/user/stock-success/"
+            failure_url = BASE_URL + "/user/stock-failed/"
         # Encode the user's email and append it to the success URL as a query parameter
         encoded_email = urllib.parse.quote(self.customer.email)
         success_url_with_email = f"{success_url}?email={encoded_email}"
@@ -76,7 +79,7 @@ class StripePayment:
                 }
             ],
             mode="payment",
-            success_url=success_url_with_email,
+            success_url=success_url,
             cancel_url=failure_url,
         )
         return stripe_session
