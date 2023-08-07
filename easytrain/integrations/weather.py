@@ -10,7 +10,7 @@ class Weather:
     def get_weather_payment(userid):
             profile = Profiles.objects.filter(user=userid).first()
             mode = "weather"
-            stripe_payment = StripePayment(int(619), profile, mode)
+            stripe_payment = StripePayment(int(619),'weather', profile, mode)
             return stripe_payment.checkout_session() 
         
     def send_weather_data_to_ai(self, city_name,user):
