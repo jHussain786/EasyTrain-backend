@@ -57,9 +57,13 @@ class StripePayment:
     def checkout_session(self):
         # BASE_URL = "http://staging-env-easytrain.eba-syvqgi3q.us-west-2.elasticbeanstalk.com"
         BASE_URL = "http://localhost:3000"
+        DJNAGOBASE_URL="http://http://staging-env-easytrain.eba-syvqgi3q.us-west-2.elasticbeanstalk.com"
         if(self.paymenttype=='weather'):
             success_url = BASE_URL + "/user/weather-success/"
             failure_url = BASE_URL + "/user/weather-failed/"
+        if(self.paymenttype=='dataset'):
+            success_url = DJNAGOBASE_URL + "api/payment_success/"
+            failure_url = DJNAGOBASE_URL + "/api/payment_failed/"
         else:
             success_url = BASE_URL + "/user/stock-success/"
             failure_url = BASE_URL + "/user/stock-failed/"
