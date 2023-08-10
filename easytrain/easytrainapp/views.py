@@ -387,4 +387,205 @@ def payment_successful_weather(request):
     
     except Exception as e:
         return JsonResponse({"message": "Payment successful but urls not uploaded to personalai", "error": str(e)})
-    
+
+@csrf_exempt
+@permission_classes([IsAuthenticated])
+def dashboard(request):
+    if request.method == "GET":
+        try:
+            return JsonResponse({"packages_count": len(json.loads(serialize('json', Packages.objects.all()))), 
+                                "user_count": len(json.loads(serialize('json', Profiles.objects.all()))), 
+                                "query_count": len(json.loads(serialize('json', DataCollectionUrls.objects.all()))), 
+                                "recent_users": json.loads(serialize('json', Profiles.objects.all().order_by('-updated_time')))
+                                })
+        except Exception as e:
+            return JsonResponse({"message": "Something went wrong", "error": str(e)})
+
+def message(request):
+    if request.method == "POST":
+        try:
+            user_id = json.loads(request.body)['user_id']
+            key = Profiles.objects.get(user=user_id).PersonalaiKey
+            personalai = Personalai(key)
+            message = json.loads(request.body)['message']
+            personalai.message(message)
+
+            return JsonResponse({"message": "Message upload successfully"})
+        except Exception as e:
+            return JsonResponse({"message": "Something went wrong", "error": str(e)})
+
+@csrf_exempt
+@permission_classes([IsAuthenticated])
+def cards(request):
+    if request.method == "GET":
+        try:
+            mode = json.loads(request.body)['mode']
+
+            if mode == 'weekly':
+                today = datetime.now(timezone.utc)
+                dates = [today - timedelta(days=i) for i in range(7)]
+                dates = [date.replace(tzinfo=timezone.utc) for date in dates]
+
+                day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                
+                data = []
+
+                for date in dates:
+                    start_date = date.replace(hour=0, minute=0, second=0)
+                    end_date = date.replace(hour=23, minute=59, second=59)
+                    profiles = Profiles.objects.filter(updated_time__range=[start_date, end_date])
+                    queries = DataCollectionUrls.objects.filter(updated_time__range=[start_date, end_date])
+                    income = Packages.objects.filter(updated_time__range=[start_date, end_date]).values('price')
+                    income = sum([i['price'] for i in income])
+                    urls = [url for query in queries for url in query.urls.split(',')]
+                    
+
+                    user_count = len(profiles)
+
+                    day_name = day_names[date.weekday()]
+                    data.append({
+                        day_name: {
+                            "users": user_count,
+                            "queries": len(queries),
+                            "income": income,
+                            "links": len(urls)
+                        }
+                    })
+
+                return JsonResponse({"cards": data})
+
+            if mode == 'monthly':
+
+                today = datetime.now(timezone.utc)
+                dates = [today - timedelta(days=i) for i in range(30)]
+                dates = [date.replace(tzinfo=timezone.utc) for date in dates]
+
+                data = []
+
+                for date in dates:
+                    start_date = date.replace(hour=0, minute=0, second=0)
+                    end_date = date.replace(hour=23, minute=59, second=59)
+                    profiles = Profiles.objects.filter(updated_time__range=[start_date, end_date])
+                    queries = DataCollectionUrls.objects.filter(updated_time__range=[start_date, end_date])
+                    income = Packages.objects.filter(updated_time__range=[start_date, end_date]).values('price')
+                    income = sum([i['price'] for i in income])
+                    urls = [url for query in queries for url in query.urls.split(',')]
+                    
+
+                    user_count = len(profiles)
+
+                    data.append({
+                        str(date.date()): {
+                            "users": user_count,
+                            "queries": len(queries),
+                            "income": income,
+                            "links": len(urls)
+                        }
+                    })
+
+                return JsonResponse({"cards": data})
+                
+            
+            if mode == 'yearly':
+                today = datetime.now(timezone.utc)
+                dates = [today - timedelta(days=i) for i in range(365, 0, -31)]
+                dates = [date.replace(tzinfo=timezone.utc) for date in dates]
+
+                data = []
+
+                month_names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
+                                'October', 'November', 'December']
+                
+                
+
+                for date in dates:
+                    start_date = date.replace(day =1, hour=0, minute=0, second=0)
+
+                    end_day = 31 if date.month in [1, 3, 5, 7, 8, 10, 12] else 30
+                    if date.month == 2:
+                        end_day = 28
+
+                    end_date = date.replace(day = end_day,hour=23, minute=59, second=59)
+                    profiles = Profiles.objects.filter(updated_time__range=[start_date, end_date])
+                    queries = DataCollectionUrls.objects.filter(updated_time__range=[start_date, end_date])
+                    income = Packages.objects.filter(updated_time__range=[start_date, end_date]).values('price')
+                    income = sum([i['price'] for i in income])
+                    urls = [url for query in queries for url in query.urls.split(',')]
+                    
+
+                    user_count = len(profiles)
+
+                    month_name = month_names[date.month - 1]
+
+                    data.append({
+                        month_name: {
+                            "users": user_count,
+                            "queries": len(queries),
+                            "income": income,
+                            "links": len(urls),
+                            "date": str(date.date())
+                        }
+                    })
+
+            return JsonResponse({"cards": data})           
+
+            
+        except Exception as e:
+            return JsonResponse({"message": "Something went wrong", "error": str(e)})
+    return JsonResponse({"cards": []})
+
+@csrf_exempt
+@permission_classes([IsAuthenticated])
+def get_user_data(request):
+    if request.method == "POST":
+        try:
+            user_id = json.loads(request.body)['user_id']
+            user = json.loads(serialize('json', Profiles.objects.filter(user=user_id)))
+            total_packages = len(json.loads(serialize('json', Packages.objects.filter(user=user_id))))
+            total_amount_paid = sum([package['fields']['price'] for package in json.loads(serialize('json', Packages.objects.filter(user=user_id)))])
+            total_links = sum([(len(data_url['fields']['urls'].split(' '))) for data_url in json.loads(serialize('json', DataCollectionUrls.objects.filter(user=user_id)))])
+            total_queries = len(json.loads(serialize('json', DataCollectionUrls.objects.filter(user=user_id))))
+            return JsonResponse({"user": user, 
+                                 "record":
+                                 { "total_packages": total_packages,
+                                   "total_amount_paid": total_amount_paid,
+                                     "total_links": total_links, 
+                                     "total_queries": total_queries
+                                     }})
+        except Exception as e:
+            return JsonResponse({"message": "Something went wrong", "error": str(e)})
+    else:
+        return JsonResponse({"message": "Request must be POST"})
+
+@csrf_exempt
+@permission_classes([IsAuthenticated])
+def change_user_information(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        if data['username'] != request.user.username:
+            JsonResponse({"message": "You are not allowed to change password of other users"})
+        
+        try:
+            user = User.objects.get(username=data['username'])
+            user.set_password(data['password'])
+            user.save()
+            return JsonResponse({"message": "User password updated successfully"})
+        except Exception as e:
+            return JsonResponse({"message": "Something went wrong", "error": str(e)})
+    return JsonResponse({"message": "Something went wrong"})
+
+@csrf_exempt
+@permission_classes([IsAuthenticated])
+def get_queries_by_user_id(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        if data['user_id'] != request.user.id:
+            JsonResponse({"message": "You are not allowed to get queries of other users"})
+        try:
+            user_id = json.loads(request.body)['user_id']
+            queries = json.loads(serialize('json', DataCollectionUrls.objects.filter(user=user_id)))
+            return JsonResponse({"queries": queries})
+        except Exception as e:
+            return JsonResponse({"message": "Something went wrong", "error": str(e)})
+    else:
+        return JsonResponse({"message": "Request must be POST"})

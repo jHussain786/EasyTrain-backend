@@ -48,7 +48,7 @@ class Personalai:
             return None
         
     def message(self, message):
-        message = message + "\n"  + str(self.get_local_time)
+        message = message + "\n"  + str(self.get_local_time())
         response = requests.post(self.message_url, headers=self.headers, json={"text": message})
         return response.json()['ai_message']
 
