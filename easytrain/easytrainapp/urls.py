@@ -20,7 +20,7 @@ urlpatterns = [
 
     path('api/payment_failed/', views.payment_failed, name='payment_failed'),
     path('activate/<uidb64>/<token>', views.activate, name='activate'),
-    path('api/message', views.message, name='message'),
+    path('api/message/', views.message, name='message'),
     
     # weather api's
     #####
