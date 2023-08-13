@@ -49,7 +49,8 @@ class Personalai:
         
     def message(self, message):
         message = message + "\n"  + str(self.get_local_time())
-        response = requests.post(self.message_url, headers=self.headers, json={"text": message})
+        response = requests.post(self.message_url, headers=self.headers, json={"Text": message})
+        print(response)
         return response.json()['ai_message']
 
     def upload(self, urls):
