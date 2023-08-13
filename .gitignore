@@ -8,6 +8,8 @@ venv/*
 
 env/*
 
+easytrain/env/*
+
 */__pycache__/*
 
 .pyc

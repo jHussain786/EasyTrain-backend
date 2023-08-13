@@ -2,6 +2,7 @@ import traceback
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login, logout, authenticate
+import requests
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from django.views.decorators.csrf import csrf_exempt
@@ -65,10 +66,10 @@ def activate_user(request, user, email):
 
 
 @csrf_exempt
-@api_view(['POST'])
+@api_view(['GET'])
 def register_user(request):
     form = UserCreationForm()
-    if request.method == 'POST':
+    if request.method == 'GET':
         form = UserCreationForm(json.loads(request.body))
         
         if form.is_valid():
@@ -82,14 +83,15 @@ def register_user(request):
                 return JsonResponse({"error_message": "Invalid key"})
             
             instance = form.save(commit=False)
-
+            instance.is_staff = data["is_staff"]
             instance.is_active=False
             instance.save()
 
             Profiles.objects.create(name=instance.username, 
                                     email=data['email'], 
                                     PersonalaiKey=personalkey, 
-                                    user= instance.id)
+                                    user= instance.id
+                                    )
 
             activate_user(request, instance, data['email'])
 
@@ -400,18 +402,25 @@ def dashboard(request):
                                 })
         except Exception as e:
             return JsonResponse({"message": "Something went wrong", "error": str(e)})
-
+@csrf_exempt
 def message(request):
     if request.method == "POST":
         try:
-            user_id = json.loads(request.body)['user_id']
+            rbody=json.loads(request.body)
+            user_id = rbody['user_id']
             key = Profiles.objects.get(user=user_id).PersonalaiKey
             personalai = Personalai(key)
-            message = json.loads(request.body)['message']
-            personalai.message(message)
-
+            message = rbody['message']
+            headers={"Content-Type": "application/json",
+            "x-api-key": key}
+            message_url = 'https://api.personal.ai/v1/message'
+            response = requests.post(message_url, headers=headers, json={"Text": message})
+            if response.status_code == 200:
+                ai_response = response.json()['ai_message']
+                print(ai_response)
             return JsonResponse({"message": "Message upload successfully"})
         except Exception as e:
+            print(request)
             return JsonResponse({"message": "Something went wrong", "error": str(e)})
 
 @csrf_exempt
