@@ -40,6 +40,9 @@ from django.core.mail import EmailMessage
 
 import json
 
+def health(request):
+    return JsonResponse({"message": "Server is up and running"})
+
 def activate(request, uidb64, token):
     User = get_user_model()
     try:
@@ -226,16 +229,60 @@ def get_all_packages(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def weather(request):
-    try:
-        city = json.loads(request.body)['city']
-        personalkey = Profiles.objects.get(user=request.user.id).PersonalaiKey
-        weather_data = weather(personalkey).get_weather_data_by_city_name(city)
-        return JsonResponse({"redirect_url": weather_data})
-    except Exception as e:
-        return JsonResponse({"message": "Something went wrong", "error": str(e)})
+        try:
+            user=request.user.id
+            weather_data = Weather.get_weather_payment(user)
+            return JsonResponse({"redirect_url": weather_data})
+        except Exception as e:
+            error_message = str(e)
+            traceback.print_exc()  # This will print the traceback to the console for debugging purposes
+            return JsonResponse({"error": error_message})
 
-def health(request):
-    return JsonResponse({"message": "Server is up and running"})
+        
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])   
+def weather_saving_data_to_ai(request):
+        try:
+            city = json.loads(request.body)['city']
+            Weather().send_weather_data_to_ai(city,request.user.id)
+            return JsonResponse({"message": "Data Saved to AI"})
+        except Exception as e:
+            error_message = str(e)
+            return JsonResponse({"error": error_message})
+        
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def stock(request):
+        try:
+            user=request.user.id
+            stock_data = StockData.get_stock_payment(user)
+            return JsonResponse({"redirect_url": stock_data})
+        except Exception as e:
+            error_message = str(e)
+            traceback.print_exc()  # This will print the traceback to the console for debugging purposes
+            return JsonResponse({"error": error_message})
+                
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])   
+def stock_data_by_symbol(request):
+        try:
+            symbol = json.loads(request.body)['symbol']
+            StockData().get_stock_data_by_symbol(symbol,request.user.id)
+            return JsonResponse({"message": "Data Saved to AI"})
+        except Exception as e:
+            error_message = str(e)
+            return JsonResponse({"error": error_message})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])   
+def stock_search(request):
+        try:
+            keyword = json.loads(request.body)['keyword']
+            data=StockData().keyword_search(keyword)
+            return JsonResponse({"data":data })
+        except Exception as e:
+            error_message = str(e)
 
 @csrf_exempt
 @permission_classes([IsAuthenticated])
