@@ -170,14 +170,6 @@ def home(request):
             return JsonResponse({"redirect_url": redirect_page})
         else:
             return JsonResponse({"message": "Only dataset type is implemeted yet"})
-        data = json.loads(request.body)
-        if data['type'] == 'dataset':
-            keyword = data['keyword']
-            Wrapper = wrapper(keyword, request.user)
-            redirect_page = Wrapper.make_payment()
-            return JsonResponse({"redirect_url": redirect_page})
-        else:
-            return JsonResponse({"message": "Only dataset type is implemeted yet"})
     except Exception as e:
         return JsonResponse({"message": "Something went wrong", "error": str(e)})
 
@@ -237,7 +229,7 @@ def weather(request):
     try:
         city = json.loads(request.body)['city']
         personalkey = Profiles.objects.get(user=request.user.id).PersonalaiKey
-        weather_data = WeatherData(personalkey).get_weather_data_by_city_name(city)
+        weather_data = weather(personalkey).get_weather_data_by_city_name(city)
         return JsonResponse({"redirect_url": weather_data})
     except Exception as e:
         return JsonResponse({"message": "Something went wrong", "error": str(e)})
