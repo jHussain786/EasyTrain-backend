@@ -149,12 +149,6 @@ def login_user(request):
                                     "user_id": user_id,
                                     "is_staff": is_staff
                                     })
-                                    "refresh_token": jwt_token,
-                                    "email": email,
-                                    "username": username,
-                                    "user_id": user_id,
-                                    "is_staff": is_staff
-                                    })
             else:
                 return JsonResponse({"error_message": "Invalid username or password"})
         
