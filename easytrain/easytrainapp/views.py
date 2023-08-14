@@ -11,6 +11,10 @@ from django.core.serializers import serialize
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.contrib.auth.models import User
+from django.core.serializers import serialize
+from datetime import datetime, timedelta
+from django.utils import timezone
+from django.contrib.auth.models import User
 
 from .models import Profiles, Packages
 from django.http import JsonResponse
@@ -82,7 +86,7 @@ def register_user(request):
 
             if validate_key == False:
                 return JsonResponse({"error_message": "Invalid key"})
-            
+
             instance = form.save(commit=False)
             instance.is_staff = data["is_staff"]
             instance.is_active=False
@@ -130,11 +134,21 @@ def login_user(request):
                 username = authenticated_user.username
                 user_id = authenticated_user.id
                 is_staff = authenticated_user.is_staff
+                email = authenticated_user.email
+                username = authenticated_user.username
+                user_id = authenticated_user.id
+                is_staff = authenticated_user.is_staff
 
                 access_token = str(refresh.access_token)
 
                 return JsonResponse({"message": "Logged in successfully",
                                     "access_token": access_token, 
+                                    "refresh_token": jwt_token,
+                                    "email": email,
+                                    "username": username,
+                                    "user_id": user_id,
+                                    "is_staff": is_staff
+                                    })
                                     "refresh_token": jwt_token,
                                     "email": email,
                                     "username": username,
@@ -162,6 +176,14 @@ def home(request):
             return JsonResponse({"redirect_url": redirect_page})
         else:
             return JsonResponse({"message": "Only dataset type is implemeted yet"})
+        data = json.loads(request.body)
+        if data['type'] == 'dataset':
+            keyword = data['keyword']
+            Wrapper = wrapper(keyword, request.user)
+            redirect_page = Wrapper.make_payment()
+            return JsonResponse({"redirect_url": redirect_page})
+        else:
+            return JsonResponse({"message": "Only dataset type is implemeted yet"})
     except Exception as e:
         return JsonResponse({"message": "Something went wrong", "error": str(e)})
 
@@ -181,6 +203,7 @@ def payment_failed(request):
 @permission_classes([IsAuthenticated])
 def get_all_users(request):
     users = Profiles.objects.values('id', 'name', 'email', 'updated_time').order_by('-updated_time')[:5]
+    users = Profiles.objects.values('id', 'name', 'email', 'updated_time').order_by('-updated_time')[:5]
     
     json = []
     for user in users:
@@ -189,9 +212,11 @@ def get_all_users(request):
         user['queries'] = len(DataCollectionUrls.objects.filter(user=Profiles.objects.get(email=user['email']).user))
         user['total_amount_paid'] = sum([package.price for package in user_package])
         user['total_usage'] = sum(len(DataCollectionUrls.urls.split(',')) for DataCollectionUrls in DataCollectionUrls.objects.filter(user=Profiles.objects.get(email=user['email']).user)) 
+        user['total_usage'] = sum(len(DataCollectionUrls.urls.split(',')) for DataCollectionUrls in DataCollectionUrls.objects.filter(user=Profiles.objects.get(email=user['email']).user)) 
 
         json.append(user)
     
+    return JsonResponse({"users": json}) 
     return JsonResponse({"users": json}) 
 
 @api_view(['GET'])
@@ -277,10 +302,9 @@ def payment_successful_query(request):
 
 def payment_successful_weather(request):
     try:
-        profile = Profiles.objects.get(email=request.GET.get("email"))
-        
+        profile = Profiles.objects.get(email=request.GET.get("email"))  
         weatherData = Weather.objects.get(user=profile.user).weatherjson
-        
+
         response = Personalai(profile.PersonalaiKey).memory(str(weatherData))
         
         return JsonResponse({"message": "Payment successful" , "response": response})
